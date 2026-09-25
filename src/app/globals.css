@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+@layer components {
+.tz-input {
+  border-radius: 0.5rem;
+  background: rgb(0 0 0 / 0.3);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  color: #f4f4f5;
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  transition: box-shadow 0.15s;
+}
+.tz-input:focus {
+  box-shadow: inset 0 0 0 1px rgb(167 139 250 / 0.7);
+}
+select.tz-input option,
+select.tz-input optgroup {
+  background: #18181b;
+}
+}
+
+.tz-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.tz-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #a78bfa var(--pct), rgb(255 255 255 / 0.1) var(--pct));
+}
+.tz-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #a78bfa var(--pct), rgb(255 255 255 / 0.1) var(--pct));
+}
+.tz-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: -6px;
+  height: 16px;
+  width: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
+}
+.tz-range::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+}
+
+.tz-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.12) transparent;
+}
+
+.tz-checker {
+  background-color: #1c1c1f;
+  background-image:
+    linear-gradient(45deg, #26262a 25%, transparent 25%),
+    linear-gradient(-45deg, #26262a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #26262a 75%),
+    linear-gradient(-45deg, transparent 75%, #26262a 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.tz-stage {
+  background:
+    radial-gradient(circle at 20% 10%, rgb(139 92 246 / 0.08), transparent 40%),
+    radial-gradient(circle at 80% 90%, rgb(217 70 239 / 0.06), transparent 40%),
+    #0c0c0f;
+}
