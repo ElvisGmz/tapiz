@@ -88,9 +88,15 @@ const RECIPES: { label: string; emoji: string; make: () => Layer }[] = [
   { label: "Título grande", emoji: "🔤", make: () => text({ name: "Título", text: "TAPIZ", font: "bebas", weight: 400, size: 0.35, letterSpacing: 0.04 }) },
 ];
 
-export function LayersPanel({ editor }: { editor: Editor }) {
+export function LayersPanel({ editor, openMenuSignal = 0 }: { editor: Editor; openMenuSignal?: number }) {
   const { doc, selected } = editor;
   const [menu, setMenu] = useState(false);
+  // Lets the help guide open this menu ("Añadir capa →").
+  const [lastSignal, setLastSignal] = useState(openMenuSignal);
+  if (openMenuSignal !== lastSignal) {
+    setLastSignal(openMenuSignal);
+    setMenu(true);
+  }
   const [dragId, setDragId] = useState<string | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const reversed = [...doc.layers].reverse();

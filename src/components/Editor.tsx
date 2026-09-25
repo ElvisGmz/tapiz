@@ -3,6 +3,7 @@
 import {
   Bookmark,
   ChevronDown,
+  CircleHelp,
   Dices,
   Download,
   LayoutTemplate,
@@ -28,6 +29,7 @@ import { type Editor as EditorApi, makeShareUrl, useEditor } from "@/lib/store";
 import { recolor, reseed, surprise } from "@/lib/templates";
 import type { Layer } from "@/lib/types";
 import { ExportDialog, SavedDialog, TemplatesDialog } from "./Dialogs";
+import { type HelpAction, HelpDialog, WELCOME_KEY } from "./HelpDialog";
 import { ScenesBar } from "./ScenesBar";
 import { SizeDialog } from "./SizeDialog";
 import { Inspector } from "./Inspector";
@@ -35,12 +37,23 @@ import { LayersPanel } from "./LayersPanel";
 import { type Handle, Preview } from "./Preview";
 import { Button, Popover, cx } from "./ui";
 
-type Dialog = "templates" | "export" | "saved" | "size";
+type Dialog = "templates" | "export" | "saved" | "size" | "help";
 
 export function Editor() {
   const editor = useEditor();
   const { doc, selected } = editor;
-  const [dialog, setDialog] = useState<null | Dialog>(null);
+  // The welcome splash opens by itself only once per browser; the "?" button reopens it.
+  const [firstRun, setFirstRun] = useState(() => {
+    try {
+      if (localStorage.getItem(WELCOME_KEY)) return false;
+      localStorage.setItem(WELCOME_KEY, String(Date.now()));
+      return true;
+    } catch {
+      return false; // storage blocked: don't nag on every visit
+    }
+  });
+  const [dialog, setDialog] = useState<null | Dialog>(firstRun ? "help" : null);
+  const [addMenuSignal, setAddMenuSignal] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
 
   const flash = useCallback((msg: string) => {
@@ -129,6 +142,9 @@ export function Editor() {
         setDialog("export");
       } else if ((e.key === "Delete" || e.key === "Backspace") && !typing && selected !== "background") {
         editor.removeLayer(selected);
+      } else if (e.key === "?" && !typing) {
+        e.preventDefault();
+        setDialog("help");
       } else if (e.key === " " && !typing && !mod && !e.repeat) {
         e.preventDefault();
         doSurprise();
@@ -219,10 +235,10 @@ export function Editor() {
       <TopBar editor={editor} onDialog={setDialog} onSurprise={doSurprise} onShare={share} flash={flash} />
       <div className="flex min-h-0 flex-1">
         <aside className="flex w-64 shrink-0 flex-col border-r border-white/5 bg-zinc-900/60">
-          <LayersPanel editor={editor} />
+          <LayersPanel editor={editor} openMenuSignal={addMenuSignal} />
           <div className="border-t border-white/5 p-3 text-[10.5px] leading-relaxed text-zinc-500">
             <kbd className="text-zinc-400">Espacio</kbd> sorpresa · <kbd className="text-zinc-400">⌘Z</kbd> deshacer · <kbd className="text-zinc-400">⌘D</kbd> duplicar ·{" "}
-            <kbd className="text-zinc-400">⌘E</kbd> exportar
+            <kbd className="text-zinc-400">⌘E</kbd> exportar · <kbd className="text-zinc-400">?</kbd> ayuda
           </div>
         </aside>
         <main
@@ -257,6 +273,28 @@ export function Editor() {
       <TemplatesDialog open={dialog === "templates"} onClose={() => setDialog(null)} editor={editor} />
       {dialog === "export" && <ExportDialog open onClose={() => setDialog(null)} doc={doc} />}
       <SavedDialog open={dialog === "saved"} onClose={() => setDialog(null)} editor={editor} />
+      {dialog === "help" && (
+        <HelpDialog
+          open
+          firstRun={firstRun}
+          onClose={() => {
+            setDialog(null);
+            setFirstRun(false);
+          }}
+          onAction={(a: HelpAction) => {
+            setDialog(null);
+            setFirstRun(false);
+            if (a === "templates" || a === "export" || a === "size" || a === "saved") setDialog(a);
+            else if (a === "surprise") doSurprise();
+            else if (a === "add") setAddMenuSignal((n) => n + 1);
+            else if (a === "photos") editor.addLayer("image");
+            else if (a === "daynight" && !doc.scenes) {
+              editor.setDoc((d) => makeDynamic(d));
+              flash("🌙 Creé una versión de noche — edítala abajo");
+            }
+          }}
+        />
+      )}
       {/* Mounted only while open so search/tab state starts fresh each time. */}
       {dialog === "size" && (
       <SizeDialog
@@ -429,6 +467,13 @@ function TopBar({
         </span>
       </Button>
 
+      <Button
+        onClick={() => onDialog("help")}
+        title="Cómo usar Tapiz (?)"
+        className="h-8 w-8 rounded-full px-0 text-zinc-400 ring-1 ring-white/10 hover:text-white"
+      >
+        <CircleHelp size={16} />
+      </Button>
       <Button onClick={() => onDialog("saved")} title="Mis diseños">
         <Bookmark size={15} />
       </Button>

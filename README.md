@@ -16,6 +16,7 @@ pnpm dev
 
 ## Funciones
 
+- **Guía de bienvenida**: aparece sola la primera vez y se vuelve a abrir con el botón **?** o la tecla `?`. Cada función tiene un botón "Probar" que te lleva directo a ella.
 - **26 plantillas editables**: estáticas, ▶ animadas y ☀️🌙 de día/noche. Se pueden recolorear con cualquier paleta antes de cargarlas.
 - **Fotos tuyas** como capa: de fondo a pantalla completa o esparcidas como los emojis, con marcos (polaroid, círculo, arco, blob) y ajustes de brillo, contraste, saturación, B/N y tono. Se suben con archivo, ⌘V, arrastrando o **pegando un link** (el proxy `/api/image` evita el bloqueo CORS). Los PNG transparentes se detectan y se muestran sin marco. Las fotos se guardan en IndexedDB, dentro del navegador.
 - **Día / Noche (macOS)**: escenas por apariencia (claro/oscuro) o por hora del día, con escenas de noche, atardecer y amanecer generadas automáticamente. Se exporta un **.heic dinámico nativo** que se arma en el navegador: HEVC vía WebCodecs, un muxer HEIF propio y metadatos XMP `apple_desktop:apr` / `apple_desktop:h24`.
@@ -24,7 +25,7 @@ pnpm dev
 - **Remix colores**, **Barajar**, deshacer/rehacer, Mis diseños y links para compartir
 - **Tamaño del lienzo**: más de 40 dispositivos (Mac, monitores, iPhone, Android, tablets, redes), proporciones con calidad HD a 8K, "Mi pantalla" o un tamaño personalizado
 
-Atajos: `Espacio` sorpresa · `⌘Z` / `⇧⌘Z` deshacer/rehacer · `⌘D` duplicar · `⌘E` exportar · `⌘V` pegar foto o link · `Supr` borrar capa
+Atajos: `Espacio` sorpresa · `⌘Z` / `⇧⌘Z` deshacer/rehacer · `⌘D` duplicar · `⌘E` exportar · `⌘V` pegar foto o link · `Supr` borrar capa · `?` ayuda
 
 ## Estructura
 
