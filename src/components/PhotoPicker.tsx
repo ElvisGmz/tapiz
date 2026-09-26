@@ -3,6 +3,7 @@
 import { Link2, Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { type PhotoMeta, addPhoto, deletePhoto, listPhotos, photoFromUrl } from "@/lib/photos";
+import { key } from "@/lib/platform";
 import { cx } from "./ui";
 
 export function PhotoPicker({
@@ -59,7 +60,7 @@ export function PhotoPicker({
           <Upload size={13} /> Subir fotos
         </button>
         <div className="flex items-center justify-center rounded-lg py-2 text-center text-[11px] leading-tight text-zinc-500 ring-1 ring-dashed ring-white/10">
-          o pega con ⌘V / arrastra al lienzo
+          o pega con {key("V")} / arrastra al lienzo
         </div>
       </div>
       <input

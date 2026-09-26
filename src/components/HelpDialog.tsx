@@ -19,6 +19,7 @@ import {
 import { useEffect, useRef } from "react";
 import { renderWallpaper } from "@/lib/render";
 import { preloadAssets } from "@/lib/render/assets";
+import { type Platform, animatedHowTo, getPlatform, key } from "@/lib/platform";
 import { TEMPLATES, buildTemplate } from "@/lib/templates";
 import { cx } from "./ui";
 
@@ -34,7 +35,9 @@ interface Feature {
   action?: { label: string; id: HelpAction };
 }
 
-const FEATURES: Feature[] = [
+function features(p: Platform): Feature[] {
+  const live = animatedHowTo(p);
+  return [
   {
     icon: Layers,
     color: "text-sky-300",
@@ -66,21 +69,26 @@ const FEATURES: Feature[] = [
     icon: ImageIcon,
     color: "text-rose-300",
     title: "Tus fotos",
-    text: "Súbelas, pégalas con ⌘V, arrástralas o trae una por link. De fondo completo o como elementos con marco polaroid, círculo, arco…",
+    text: `Súbelas, pégalas con ${key("V", false, p)}, arrástralas o trae una por link. De fondo completo o como elementos con marco polaroid, círculo, arco…`,
     action: { label: "Añadir fotos", id: "photos" },
   },
   {
     icon: Sun,
     color: "text-indigo-300",
-    title: "Día / Noche para Mac",
-    text: "Crea escenas (día, atardecer, noche…) que cambian con el modo oscuro o la hora. Se descarga como .heic dinámico nativo de macOS.",
+    title: "Día / Noche",
+    text:
+      p === "mac"
+        ? "Crea escenas (día, atardecer, noche…) que cambian con el modo oscuro o la hora. Se descarga como .heic dinámico nativo de macOS."
+        : "Crea escenas (día, atardecer, noche…) y descárgalas como imágenes. En Mac además se arma un .heic que cambia solo; el link en vivo también cambia de escena con el modo oscuro o la hora.",
     action: { label: "Activar día/noche", id: "daynight" },
   },
   {
     icon: Clapperboard,
     color: "text-cyan-300",
     title: "Animado",
-    text: "Deriva, flotar, girar, latir, parpadeo, terreno que se transforma… Loop sin corte en MP4 o link en vivo para la app Plash.",
+    text: `Deriva, flotar, girar, latir, parpadeo, terreno que se transforma… Loop sin corte en MP4${
+      live ? ` o link en vivo para ${live.app}` : " para apps de fondos en video"
+    }.`,
   },
   {
     icon: Monitor,
@@ -103,15 +111,16 @@ const FEATURES: Feature[] = [
     text: "Tu diseño se guarda solo. Guarda versiones en “Mis diseños” o copia un link para compartirlo (tus fotos no viajan en el link).",
     action: { label: "Mis diseños", id: "saved" },
   },
-];
+  ];
+}
 
-const SHORTCUTS: [string, string][] = [
+const shortcuts = (p: Platform): [string, string][] => [
   ["Espacio", "Sorpréndeme"],
-  ["⌘Z / ⇧⌘Z", "Deshacer / rehacer"],
-  ["⌘D", "Duplicar capa"],
-  ["Supr", "Borrar capa"],
-  ["⌘V", "Pegar foto o link"],
-  ["⌘E", "Descargar"],
+  [`${key("Z", false, p)} / ${key("Z", true, p)}`, "Deshacer / rehacer"],
+  [key("D", false, p), "Duplicar capa"],
+  [p === "mac" ? "Supr / ⌫" : "Supr", "Borrar capa"],
+  [key("V", false, p), "Pegar foto o link"],
+  [key("E", false, p), "Descargar"],
   ["?", "Esta ayuda"],
 ];
 
@@ -155,6 +164,7 @@ export function HelpDialog({ open, onClose, onAction, firstRun }: { open: boolea
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
   if (!open) return null;
+  const platform = getPlatform();
 
   return (
     <div
@@ -183,14 +193,14 @@ export function HelpDialog({ open, onClose, onAction, firstRun }: { open: boolea
               </div>
               <p className="max-w-xl text-sm text-zinc-300">
                 Tu estudio de wallpapers: combina colores, texturas, patrones, animales, emojis, íconos y tus fotos, y descárgalo nítido en cualquier pantalla —
-                incluso como fondo de día/noche o animado para tu Mac.
+                incluso como fondo de día/noche o animado{platform === "mac" ? " para tu Mac" : platform === "windows" ? " para tu PC" : ""}.
               </p>
             </div>
           </div>
 
           {/* Features */}
           <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
+            {features(platform).map((f) => (
               <div key={f.title} className="flex flex-col rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/5 transition hover:bg-white/[0.05]">
                 <div className="mb-1.5 flex items-center gap-2">
                   <f.icon size={16} className={f.color} />
@@ -214,7 +224,7 @@ export function HelpDialog({ open, onClose, onAction, firstRun }: { open: boolea
                 <p className="text-sm font-semibold text-white">Atajos</p>
               </div>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-3">
-                {SHORTCUTS.map(([k, v]) => (
+                {shortcuts(platform).map(([k, v]) => (
                   <div key={k} className="flex items-center gap-2 text-xs text-zinc-400">
                     <kbd className="rounded-md bg-black/40 px-1.5 py-0.5 font-mono text-[11px] text-zinc-200 ring-1 ring-white/10">{k}</kbd>
                     {v}

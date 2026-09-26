@@ -16,6 +16,8 @@ import {
   renderToBlob,
 } from "@/lib/export";
 import { type Job, type JobKind, cancelJob, startJob, useJobs } from "@/lib/jobs";
+import { animatedHowTo, getPlatform, isApple } from "@/lib/platform";
+import { syncScenes } from "@/lib/scenes";
 import { loopOf } from "@/lib/render";
 import { docIsAnimated } from "@/lib/render/motion";
 import { makeShareUrl } from "@/lib/store";
@@ -308,7 +310,11 @@ export function ExportDialog({ open, onClose, doc }: { open: boolean; onClose: (
 function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
   const [res, setRes] = useState<"doc" | "fhd" | "4k">(doc.width * doc.height > 3840 * 2160 ? "4k" : "doc");
   const [fps, setFps] = useState("30");
-  const [codec, setCodec] = useState<VideoCodecChoice>("hevc");
+  const platform = getPlatform();
+  const live = animatedHowTo(platform);
+  const showLive = platform !== "android" && platform !== "ios";
+  // HEVC is best on Apple; H.264 plays and encodes everywhere else (Windows, Android).
+  const [codec, setCodec] = useState<VideoCodecChoice>(isApple(platform) ? "hevc" : "avc");
   const [copied, setCopied] = useState(false);
   const job = useLatestJob("mp4");
   const running = job?.status === "running";
@@ -357,17 +363,38 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
         <span className="ml-auto font-mono text-[11px] text-zinc-500">loop de {seconds}s</span>
       </div>
       <p className="text-xs leading-relaxed text-zinc-400">
-        macOS no permite fondos animados propios de forma nativa. Tienes dos caminos: el <b className="text-zinc-200">link en vivo</b> para la app gratuita{" "}
-        <a href="https://sindresorhus.com/plash" target="_blank" rel="noreferrer" className="text-cyan-300 underline">
-          Plash
-        </a>{" "}
-        (se ve nítido a cualquier resolución y respeta día/noche), o un <b className="text-zinc-200">video MP4 en loop</b> para apps de fondos en video.
+        {live ? (
+          <>
+            {platform === "mac" ? "macOS no permite fondos animados propios de forma nativa. " : ""}Usa la app gratuita{" "}
+            <a href={live.url} target="_blank" rel="noreferrer" className="text-cyan-300 underline">
+              {live.app}
+            </a>{" "}
+            con el <b className="text-zinc-200">link en vivo</b> (nítido a cualquier resolución y cambia de escena con el modo oscuro o la hora) o con el{" "}
+            <b className="text-zinc-200">video MP4 en loop</b>.
+          </>
+        ) : platform === "android" ? (
+          <>
+            Descarga el <b className="text-zinc-200">video MP4 en loop</b> y ponlo como fondo con una app de fondos animados (live wallpaper) de la Play Store.
+          </>
+        ) : platform === "ios" ? (
+          <>iPhone y iPad no permiten fondos de video propios. Descarga una imagen, o genera el MP4 para usarlo en otro equipo.</>
+        ) : (
+          <>
+            Descarga el <b className="text-zinc-200">video MP4 en loop</b> para tu app de fondos animados, o usa el <b className="text-zinc-200">link en vivo</b> en una app que
+            acepte páginas web como fondo.
+          </>
+        )}
       </p>
 
-      <Button variant="soft" className="w-full" onClick={copyLive}>
-        {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "¡Link copiado! Pégalo en Plash → Add Website" : "Copiar link en vivo (Plash)"}
-      </Button>
-      {doc.layers.some((l) => l.type === "image") && <p className="text-[11px] text-amber-200/80">Ojo: tus fotos no viajan en el link en vivo; usa el video si tu diseño tiene fotos.</p>}
+      {showLive && (
+        <Button variant="soft" className="w-full" onClick={copyLive}>
+          {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
+          {copied ? `¡Link copiado! ${live?.liveHint ?? "Pégalo en tu app de fondos"}` : `Copiar link en vivo${live ? ` (${live.app})` : ""}`}
+        </Button>
+      )}
+      {showLive && doc.layers.some((l) => l.type === "image") && (
+        <p className="text-[11px] text-amber-200/80">Ojo: tus fotos no viajan en el link en vivo; usa el video si tu diseño tiene fotos.</p>
+      )}
 
       <div className="grid grid-cols-3 gap-2">
         <Segmented
@@ -391,8 +418,8 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
           value={codec}
           onChange={setCodec}
           options={[
-            { value: "hevc", label: "HEVC", title: "Mejor calidad y peso; ideal para Mac" },
-            { value: "avc", label: "H.264", title: "Máxima compatibilidad (hasta ~4K)" },
+            { value: "hevc", label: "HEVC", title: "Mejor calidad y peso; ideal en Mac y iPhone" },
+            { value: "avc", label: "H.264", title: "Máxima compatibilidad: Windows, Android, todo (hasta ~4K)" },
           ]}
         />
       </div>
@@ -414,7 +441,10 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
 function DynamicExport({ doc }: { doc: WallpaperDoc }) {
   const [supported, setSupported] = useState<boolean | null>(null);
   const job = useLatestJob("heic");
+  const scenesJob = useLatestJob("scenes");
   const running = job?.status === "running";
+  const onMac = getPlatform() === "mac";
+  const count = doc.scenes?.length ?? 0;
 
   useEffect(() => {
     canEncodeHeic(doc.width + (doc.width % 2), doc.height + (doc.height % 2)).then(setSupported);
@@ -428,32 +458,90 @@ function DynamicExport({ doc }: { doc: WallpaperDoc }) {
     }));
   };
 
+  /** One PNG per scene — works on any system (Windows, Android, Linux…). */
+  const runScenes = () => {
+    const snapshot = structuredClone(doc);
+    const scenes = syncScenes(snapshot);
+    const slug = (n: string) => n.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "escena";
+    startJob("scenes", `${scenes.length} escenas PNG`, async ({ progress, signal }) => {
+      for (const [i, sc] of scenes.entries()) {
+        if (signal.aborted) throw new DOMException("Cancelado", "AbortError");
+        progress(i / scenes.length, `Renderizando ${sc.name} (${i + 1}/${scenes.length})…`);
+        await new Promise((r) => setTimeout(r, 0));
+        const design = { ...snapshot, background: sc.background, layers: sc.layers, scenes: undefined };
+        const blob = await renderToBlob(design, snapshot.width, snapshot.height, "png");
+        const filename = `tapiz-${String(i + 1).padStart(2, "0")}-${slug(sc.name)}-${snapshot.width}x${snapshot.height}.png`;
+        if (i === scenes.length - 1) return { blob, filename };
+        downloadBlob(blob, filename);
+        await new Promise((r) => setTimeout(r, 350));
+      }
+      throw new Error("No hay escenas");
+    });
+  };
+
   const mode = doc.dynamicMode === "time" ? "según la hora del día" : "según el modo claro/oscuro";
+  const heicBlock =
+    supported === false ? (
+      <p className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-200 ring-1 ring-amber-400/20">
+        {onMac
+          ? `Tu equipo no puede codificar HEVC a ${doc.width}×${doc.height}. Prueba 4K o 5K, o abre Tapiz en Chrome o Safari.`
+          : "Este equipo no puede generar el .heic (necesita codificar HEVC). Ábrelo desde una Mac si lo quieres para macOS."}
+      </p>
+    ) : (
+      <div className="space-y-3">
+        {job && <JobProgress job={job} doneLabel="¡.heic listo! Revisa tus descargas." />}
+        {!running && (
+          <Button variant={onMac ? "primary" : "soft"} className={cx("w-full", onMac && "py-2.5")} onClick={run} disabled={supported == null}>
+            <Download size={16} /> {onMac ? "Descargar .heic dinámico" : ".heic dinámico para Mac"}
+          </Button>
+        )}
+      </div>
+    );
+  const scenesBlock = (
+    <div className="space-y-3">
+      {scenesJob && <JobProgress job={scenesJob} doneLabel="¡Escenas listas! Revisa tus descargas." />}
+      {scenesJob?.status !== "running" && (
+        <Button variant={onMac ? "soft" : "primary"} className={cx("w-full", !onMac && "py-2.5")} onClick={runScenes}>
+          <Download size={16} /> Descargar {count} escenas (PNG)
+        </Button>
+      )}
+    </div>
+  );
+
   return (
     <div className="rounded-xl bg-gradient-to-br from-amber-400/10 via-fuchsia-500/10 to-indigo-500/20 p-4 ring-1 ring-indigo-400/25">
       <div className="flex items-center gap-2">
         <Sun size={16} className="text-amber-300" />
         <Moon size={16} className="-ml-1.5 text-indigo-300" />
-        <p className="text-sm font-semibold text-white">Wallpaper dinámico para macOS</p>
+        <p className="text-sm font-semibold text-white">{onMac ? "Wallpaper dinámico para macOS" : "Escenas de día y noche"}</p>
       </div>
       <p className="mt-1 text-xs leading-relaxed text-zinc-400">
-        Un solo archivo <b className="text-zinc-200">.heic</b> con {doc.scenes?.length} escenas que cambian {mode}. Se genera en tu navegador, nada sale de tu Mac.
+        {onMac ? (
+          <>
+            Un solo archivo <b className="text-zinc-200">.heic</b> con {count} escenas que cambian {mode}. Se genera en tu navegador, nada sale de tu Mac.
+          </>
+        ) : (
+          <>
+            Descarga cada escena como imagen para tu fondo de pantalla.
+            {getPlatform() === "windows" && " Con Lively Wallpaper y el link en vivo, la escena cambia sola con el modo oscuro o la hora."}
+            {" "}El <b className="text-zinc-200">.heic dinámico</b> que cambia solo es exclusivo de macOS.
+          </>
+        )}
       </p>
-      {supported === false ? (
-        <p className="mt-3 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-200 ring-1 ring-amber-400/20">
-          Tu equipo no puede codificar HEVC a {doc.width}×{doc.height}. Prueba 4K o 5K, o abre Tapiz en Chrome o Safari en una Mac reciente.
-        </p>
-      ) : (
-        <div className="mt-3 space-y-3">
-          {job && <JobProgress job={job} doneLabel="¡.heic listo! Revisa tus descargas." />}
-          {!running && (
-            <Button variant="primary" className="w-full py-2.5" onClick={run} disabled={supported == null}>
-              <Download size={16} /> Descargar .heic dinámico
-            </Button>
-          )}
-        </div>
-      )}
-      {job?.status === "done" && (
+      <div className="mt-3 space-y-2">
+        {onMac ? (
+          <>
+            {heicBlock}
+            {scenesBlock}
+          </>
+        ) : (
+          <>
+            {scenesBlock}
+            {heicBlock}
+          </>
+        )}
+      </div>
+      {onMac && job?.status === "done" && (
         <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-zinc-400">
           <li>Abre Ajustes del Sistema → Fondo de pantalla → “Añadir foto…” (o clic derecho en el archivo → “Establecer imagen de escritorio”).</li>
           <li>

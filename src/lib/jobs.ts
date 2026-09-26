@@ -8,7 +8,7 @@ import { downloadBlob } from "./export";
  * export dialog doesn't cancel them; a floating panel shows their progress.
  */
 
-export type JobKind = "mp4" | "heic" | "image";
+export type JobKind = "mp4" | "heic" | "image" | "scenes";
 
 export interface Job {
   id: string;

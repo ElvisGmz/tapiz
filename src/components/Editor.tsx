@@ -23,6 +23,7 @@ import { PALETTES } from "@/lib/catalog";
 import { shuffle as shuffleArr, mulberry32, randomSeed } from "@/lib/random";
 import { findResolution, ratioLabel } from "@/lib/resolutions";
 import { makeDynamic, resyncScenes, syncScenes } from "@/lib/scenes";
+import { isApple, key } from "@/lib/platform";
 import { image } from "@/lib/factory";
 import { type PhotoMeta, addPhoto, looksLikeImageUrl, photoFromUrl } from "@/lib/photos";
 import { type Editor as EditorApi, makeShareUrl, useEditor } from "@/lib/store";
@@ -238,8 +239,8 @@ export function Editor() {
         <aside className="flex w-64 shrink-0 flex-col border-r border-white/5 bg-zinc-900/60">
           <LayersPanel editor={editor} openMenuSignal={addMenuSignal} />
           <div className="border-t border-white/5 p-3 text-[10.5px] leading-relaxed text-zinc-500">
-            <kbd className="text-zinc-400">Espacio</kbd> sorpresa · <kbd className="text-zinc-400">⌘Z</kbd> deshacer · <kbd className="text-zinc-400">⌘D</kbd> duplicar ·{" "}
-            <kbd className="text-zinc-400">⌘E</kbd> exportar · <kbd className="text-zinc-400">?</kbd> ayuda
+            <kbd className="text-zinc-400">Espacio</kbd> sorpresa · <kbd className="text-zinc-400">{key("Z")}</kbd> deshacer · <kbd className="text-zinc-400">{key("D")}</kbd> duplicar ·{" "}
+            <kbd className="text-zinc-400">{key("E")}</kbd> exportar · <kbd className="text-zinc-400">?</kbd> ayuda
           </div>
         </aside>
         <main
@@ -438,10 +439,10 @@ function TopBar({
       </Button>
 
       <div className="mx-1 h-6 w-px bg-white/10" />
-      <Button onClick={editor.undo} disabled={!editor.canUndo} title="Deshacer (⌘Z)" className="px-2">
+      <Button onClick={editor.undo} disabled={!editor.canUndo} title={`Deshacer (${key("Z")})`} className="px-2">
         <Undo2 size={16} />
       </Button>
-      <Button onClick={editor.redo} disabled={!editor.canRedo} title="Rehacer (⇧⌘Z)" className="px-2">
+      <Button onClick={editor.redo} disabled={!editor.canRedo} title={`Rehacer (${key("Z", true)})`} className="px-2">
         <Redo2 size={16} />
       </Button>
 
@@ -454,7 +455,7 @@ function TopBar({
           flash("🌙 Creé una versión de noche — edítala abajo");
         }}
         className={cx(doc.scenes && "bg-indigo-500/15 text-indigo-100 ring-1 ring-indigo-400/30")}
-        title="Wallpaper dinámico que cambia de día a noche (macOS)"
+        title={isApple() ? "Wallpaper dinámico que cambia de día a noche (.heic para macOS)" : "Escenas de día y de noche (en Mac se descargan como .heic dinámico)"}
       >
         <Sun size={15} className="text-amber-300" />
         <Moon size={15} className="-ml-1.5 text-indigo-300" />

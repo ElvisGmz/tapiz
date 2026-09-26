@@ -21,7 +21,7 @@ const ADD_ITEMS: { label: string; desc: string; icon: typeof ANIMAL_ICON; color:
     make: () => emoji({ name: "Animales", chars: EMOJI_CATEGORIES[0].emojis.slice(0, 8) }),
   },
   { ...LAYER_META.icon, desc: "+2000 íconos Lucide", make: () => "icon" },
-  { ...LAYER_META.image, label: "Tus fotos", desc: "Sube, pega (⌘V) o trae por link", make: () => "image" },
+  { ...LAYER_META.image, label: "Tus fotos", desc: "Sube, pega, arrastra o trae por link", make: () => "image" },
   { ...LAYER_META.image, label: "Foto de fondo", desc: "Una foto a pantalla completa", make: () => image({ name: "Foto de fondo", mode: "fill", shadow: { enabled: false, color: "#000000", blur: 2, x: 0, y: 0.6 } }) },
   { ...LAYER_META.pattern, desc: "Puntos, ondas, topografía…", make: () => "pattern" },
   { ...LAYER_META.texture, desc: "Grano, papel, halftone…", make: () => "texture" },

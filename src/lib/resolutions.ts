@@ -1,4 +1,4 @@
-export const DEVICE_GROUPS = ["Mac", "Monitor", "iPhone", "Android", "Tablet", "Redes y otros"] as const;
+export const DEVICE_GROUPS = ["Mac", "PC", "Monitor", "iPhone", "Android", "Tablet", "Redes y otros"] as const;
 export type DeviceGroup = (typeof DEVICE_GROUPS)[number];
 
 export interface Resolution {
@@ -18,6 +18,11 @@ export const RESOLUTIONS: Resolution[] = [
   { id: "5k", label: "Studio Display 5K", group: "Mac", width: 5120, height: 2880 },
   { id: "6k", label: "Pro Display XDR 6K", group: "Mac", width: 6016, height: 3384 },
 
+  { id: "laptop-fhd", label: "Laptop Full HD 16:10", group: "PC", width: 1920, height: 1200 },
+  { id: "laptop-qhd", label: "Laptop QHD+ 16:10", group: "PC", width: 2560, height: 1600 },
+  { id: "laptop-3k", label: "Laptop 3K / OLED 16:10", group: "PC", width: 2880, height: 1800 },
+  { id: "surface-laptop", label: 'Surface Laptop 13.8"', group: "PC", width: 2304, height: 1536 },
+  { id: "surface-pro", label: "Surface Pro", group: "PC", width: 2880, height: 1920 },
   { id: "fhd", label: "Full HD", group: "Monitor", width: 1920, height: 1080 },
   { id: "qhd", label: "QHD 2K", group: "Monitor", width: 2560, height: 1440 },
   { id: "4k", label: "4K UHD", group: "Monitor", width: 3840, height: 2160 },
@@ -36,7 +41,8 @@ export const RESOLUTIONS: Resolution[] = [
 
   { id: "pixel9", label: "Pixel 9", group: "Android", width: 1080, height: 2424 },
   { id: "pixel9pro", label: "Pixel 9 Pro", group: "Android", width: 1280, height: 2856 },
-  { id: "s24u", label: "Galaxy S24 Ultra", group: "Android", width: 1440, height: 3120 },
+  { id: "s25", label: "Galaxy S24 / S25", group: "Android", width: 1080, height: 2340 },
+  { id: "s24u", label: "Galaxy S24 / S25 Ultra", group: "Android", width: 1440, height: 3120 },
   { id: "android-fhd", label: "Android FHD+ (genérico)", group: "Android", width: 1080, height: 2400 },
   { id: "android-qhd", label: "Android QHD+ (genérico)", group: "Android", width: 1440, height: 3200 },
 

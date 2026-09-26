@@ -8,6 +8,7 @@ import { renderWallpaper } from "@/lib/render";
 import { SCENE_PRESETS, type SceneKind, addScene, exitDynamic, removeScene, sceneAtHour, switchScene, syncScenes } from "@/lib/scenes";
 import type { Editor } from "@/lib/store";
 import type { Fill, Layer, Scene } from "@/lib/types";
+import { getPlatform } from "@/lib/platform";
 import { Button, Popover, Segmented, cx } from "./ui";
 
 const SceneThumb = memo(function SceneThumb({ background, layers, width, height }: { background: Fill; layers: Layer[]; width: number; height: number }) {
@@ -77,7 +78,7 @@ export function ScenesBar({ editor, onExport }: { editor: Editor; onExport: () =
             value={mode}
             onChange={(dynamicMode) => editor.setDoc((d) => ({ ...d, dynamicMode }))}
             options={[
-              { value: "appearance", label: "Modo claro / oscuro", title: "Cambia cuando macOS pasa a modo oscuro" },
+              { value: "appearance", label: "Modo claro / oscuro", title: "Cambia cuando el sistema pasa a modo oscuro" },
               { value: "time", label: "Según la hora", title: "Cambia a lo largo del día" },
             ]}
           />
@@ -87,7 +88,7 @@ export function ScenesBar({ editor, onExport }: { editor: Editor; onExport: () =
           Quitar dinámico
         </Button>
         <Button variant="primary" onClick={onExport}>
-          <Download size={14} /> .heic para Mac
+          <Download size={14} /> {getPlatform() === "mac" ? ".heic para Mac" : "Descargar escenas"}
         </Button>
       </div>
 
@@ -183,7 +184,7 @@ export function ScenesBar({ editor, onExport }: { editor: Editor; onExport: () =
 
       {mode === "appearance" && (
         <p className="mt-2 truncate text-[11px] text-zinc-500">
-          macOS usa la primera escena ☀️ en modo claro y la primera 🌙 en modo oscuro (o al anochecer en “Automático”).
+          Se usa la primera escena ☀️ en modo claro y la primera 🌙 en modo oscuro (en Mac, también al anochecer con “Automático”).
         </p>
       )}
 

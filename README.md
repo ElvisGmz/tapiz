@@ -25,7 +25,9 @@ pnpm dev
 - **Remix colores**, **Barajar**, deshacer/rehacer, Mis diseños y links para compartir
 - **Tamaño del lienzo**: más de 40 dispositivos (Mac, monitores, iPhone, Android, tablets, redes), proporciones con calidad HD a 8K, "Mi pantalla" o un tamaño personalizado
 
-Atajos: `Espacio` sorpresa · `⌘Z` / `⇧⌘Z` deshacer/rehacer · `⌘D` duplicar · `⌘E` exportar · `⌘V` pegar foto o link · `Supr` borrar capa · `?` ayuda
+- **Multiplataforma**: detecta Mac, Windows, Android, iPhone/iPad y Linux, y adapta atajos (⌘ o Ctrl), instrucciones y exportación. En Mac se ofrece el `.heic` y Plash; en Windows, [Lively Wallpaper](https://www.rocksdanister.com/lively/) (acepta el MP4 o el link en vivo); en Android, el MP4 para apps de fondos animados. Fuera de Apple el códec por defecto es H.264, y las escenas día/noche se pueden bajar como PNG en cualquier sistema.
+
+Atajos (en Windows/Linux, Ctrl en vez de ⌘): `Espacio` sorpresa · `⌘Z` / `⇧⌘Z` deshacer/rehacer · `⌘D` duplicar · `⌘E` exportar · `⌘V` pegar foto o link · `Supr` borrar capa · `?` ayuda
 
 ## Estructura
 
