@@ -1,9 +1,21 @@
 "use client";
 
 import { Check, Clapperboard, Copy, Download, Loader2, Moon, Sun, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { PALETTES } from "@/lib/catalog";
-import { type ExportFormat, type VideoCodecChoice, downloadBlob, renderDynamicHeic, renderLoopVideo, renderThumb, renderToBlob } from "@/lib/export";
+import {
+  type ExportFormat,
+  type VideoCodecChoice,
+  canStreamToDisk,
+  downloadBlob,
+  estimateVideoMB,
+  pickVideoFile,
+  renderDynamicHeic,
+  renderLoopVideo,
+  renderThumb,
+  renderToBlob,
+} from "@/lib/export";
+import { type Job, type JobKind, cancelJob, startJob, useJobs } from "@/lib/jobs";
 import { loopOf } from "@/lib/render";
 import { docIsAnimated } from "@/lib/render/motion";
 import { makeShareUrl } from "@/lib/store";
@@ -167,13 +179,42 @@ export function TemplatesDialog({ open, onClose, editor }: { open: boolean; onCl
 
 const isSafari = () => typeof navigator !== "undefined" && /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 
+/** Latest job of a kind, so a section can show its progress even after the dialog was closed and reopened. */
+function useLatestJob(kind: JobKind) {
+  const jobs = useJobs();
+  return [...jobs].reverse().find((j) => j.kind === kind);
+}
+
+function JobProgress({ job, doneLabel }: { job: Job; doneLabel?: string }) {
+  if (job.status === "running") {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-3">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+            {job.progress == null ? (
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-violet-400/70" />
+            ) : (
+              <div className="h-full bg-gradient-to-r from-cyan-400 to-violet-400 transition-[width] duration-150" style={{ width: `${job.progress * 100}%` }} />
+            )}
+          </div>
+          <span className="w-10 text-right font-mono text-xs text-zinc-300">{job.progress == null ? "…" : `${Math.round(job.progress * 100)}%`}</span>
+          <Button onClick={() => cancelJob(job.id)}>Cancelar</Button>
+        </div>
+        <p className="text-[11px] text-zinc-500">{job.message ?? "Trabajando…"} Puedes cerrar esta ventana: sigue en segundo plano.</p>
+      </div>
+    );
+  }
+  if (job.status === "error") return <p className="rounded-lg bg-red-500/10 p-3 text-xs text-red-200 ring-1 ring-red-400/20">{job.error}</p>;
+  if (job.status === "done") return <p className="flex items-center gap-1.5 text-xs text-emerald-300"><Check size={13} /> {job.savedTo ? `Guardado en ${job.savedTo}` : doneLabel ?? "¡Listo! Revisa tus descargas."}</p>;
+  return null;
+}
+
 export function ExportDialog({ open, onClose, doc }: { open: boolean; onClose: () => void; doc: WallpaperDoc }) {
   const [format, setFormat] = useState<ExportFormat>("png");
   const [quality, setQuality] = useState(0.92);
   const [extra, setExtra] = useState<string[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const job = useLatestJob("image");
+  const running = job?.status === "running";
 
   const targets = [
     { id: "current", label: "Actual", width: doc.width, height: doc.height },
@@ -181,22 +222,24 @@ export function ExportDialog({ open, onClose, doc }: { open: boolean; onClose: (
   ];
   const tooBig = isSafari() && targets.some((t) => t.width * t.height > SAFARI_MAX_PIXELS);
 
-  const run = async () => {
-    setError(null);
-    setDone(false);
-    try {
-      for (const t of targets) {
-        setBusy(`${t.width}×${t.height}`);
-        const blob = await renderToBlob({ ...doc, width: t.width, height: t.height }, t.width, t.height, format, quality);
-        downloadBlob(blob, `tapiz-${t.width}x${t.height}.${format === "jpeg" ? "jpg" : format}`);
+  const run = () => {
+    const snapshot = structuredClone(doc);
+    const list = [...targets];
+    const ext = format === "jpeg" ? "jpg" : format;
+    startJob("image", list.length > 1 ? `${list.length} imágenes` : `${format.toUpperCase()} ${doc.width}×${doc.height}`, async ({ progress, signal }) => {
+      // Packs download each image as soon as it's ready; the last one is returned to the job runner.
+      for (const [i, t] of list.entries()) {
+        if (signal.aborted) throw new DOMException("Cancelado", "AbortError");
+        progress(i / list.length, `Renderizando ${t.width}×${t.height} (${i + 1}/${list.length})…`);
+        await new Promise((r) => setTimeout(r, 0));
+        const blob = await renderToBlob({ ...snapshot, width: t.width, height: t.height }, t.width, t.height, format, quality);
+        const filename = `tapiz-${t.width}x${t.height}.${ext}`;
+        if (i === list.length - 1) return { blob, filename };
+        downloadBlob(blob, filename);
         await new Promise((r) => setTimeout(r, 350));
       }
-      setDone(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
+      throw new Error("Nada que exportar");
+    });
   };
 
   return (
@@ -250,23 +293,13 @@ export function ExportDialog({ open, onClose, doc }: { open: boolean; onClose: (
         </div>
 
         {tooBig && <p className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-200 ring-1 ring-amber-400/20">Safari limita los lienzos a ~16.7 MP. Para 6K usa Chrome, Edge o Firefox.</p>}
-        {error && <p className="rounded-lg bg-red-500/10 p-3 text-xs text-red-200 ring-1 ring-red-400/20">{error}</p>}
+        {job && <JobProgress job={job} />}
 
-        <Button variant="primary" className="w-full py-2.5" onClick={run} disabled={!!busy}>
-          {busy ? (
-            <>
-              <Loader2 size={16} className="animate-spin" /> Renderizando {busy}…
-            </>
-          ) : done ? (
-            <>
-              <Check size={16} /> ¡Listo! Descargar de nuevo
-            </>
-          ) : (
-            <>
-              <Download size={16} /> Descargar {targets.length > 1 ? `${targets.length} imágenes` : format.toUpperCase()}
-            </>
-          )}
-        </Button>
+        {!running && (
+          <Button variant="primary" className="w-full py-2.5" onClick={run}>
+            <Download size={16} /> Descargar {targets.length > 1 ? `${targets.length} imágenes` : format.toUpperCase()}
+          </Button>
+        )}
       </div>
     </Modal>
   );
@@ -276,10 +309,9 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
   const [res, setRes] = useState<"doc" | "fhd" | "4k">(doc.width * doc.height > 3840 * 2160 ? "4k" : "doc");
   const [fps, setFps] = useState("30");
   const [codec, setCodec] = useState<VideoCodecChoice>("hevc");
-  const [progress, setProgress] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const abort = useRef<AbortController | null>(null);
+  const job = useLatestJob("mp4");
+  const running = job?.status === "running";
 
   const size = (() => {
     const r = doc.width / doc.height;
@@ -287,19 +319,27 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
     const long = res === "4k" ? 3840 : 1920;
     return r >= 1 ? { width: long, height: Math.round(long / r / 2) * 2 } : { width: Math.round((long * r) / 2) * 2, height: long };
   })();
+  const seconds = loopOf(doc);
+  const mb = estimateVideoMB(size.width, size.height, Number(fps), codec, seconds);
+  const avcTooBig = codec === "avc" && Math.max(size.width, size.height) > 4096;
 
   const run = async () => {
-    setError(null);
-    setProgress(0);
-    abort.current = new AbortController();
-    try {
-      const blob = await renderLoopVideo(doc, { ...size, fps: Number(fps), codec }, setProgress, abort.current.signal);
-      downloadBlob(blob, `tapiz-animado-${size.width}x${size.height}.mp4`);
-    } catch (e) {
-      if ((e as Error).name !== "AbortError") setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setProgress(null);
+    const filename = `tapiz-animado-${size.width}x${size.height}.mp4`;
+    // Chrome/Edge: ask where to save first (needs this click) and stream straight to disk.
+    let file: FileSystemFileHandle | undefined;
+    if (canStreamToDisk()) {
+      try {
+        file = await pickVideoFile(filename);
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return; // user closed the save dialog
+      }
     }
+    const snapshot = structuredClone(doc);
+    const opts = { ...size, fps: Number(fps), codec };
+    startJob("mp4", `MP4 ${size.width}×${size.height} · ${fps} fps`, async ({ progress, signal }) => {
+      const blob = await renderLoopVideo(snapshot, { ...opts, file }, { progress, signal });
+      return blob ? { blob, filename } : { savedTo: file?.name ?? filename };
+    });
   };
 
   const copyLive = async () => {
@@ -314,7 +354,7 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
       <div className="flex items-center gap-2">
         <Clapperboard size={16} className="text-cyan-300" />
         <p className="text-sm font-semibold text-white">Wallpaper animado</p>
-        <span className="ml-auto font-mono text-[11px] text-zinc-500">loop de {loopOf(doc)}s</span>
+        <span className="ml-auto font-mono text-[11px] text-zinc-500">loop de {seconds}s</span>
       </div>
       <p className="text-xs leading-relaxed text-zinc-400">
         macOS no permite fondos animados propios de forma nativa. Tienes dos caminos: el <b className="text-zinc-200">link en vivo</b> para la app gratuita{" "}
@@ -356,46 +396,36 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
           ]}
         />
       </div>
-      {progress != null ? (
-        <div className="flex items-center gap-3">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-gradient-to-r from-cyan-400 to-violet-400 transition-[width]" style={{ width: `${progress * 100}%` }} />
-          </div>
-          <span className="w-10 text-right font-mono text-xs text-zinc-300">{Math.round(progress * 100)}%</span>
-          <Button onClick={() => abort.current?.abort()}>Cancelar</Button>
-        </div>
-      ) : (
-        <Button variant="primary" className="w-full py-2.5" onClick={run}>
+      <p className="text-[11px] text-zinc-500">
+        ≈ {mb < 1 ? mb.toFixed(1) : Math.round(mb)} MB · {Math.round(seconds * Number(fps))} cuadros
+        {canStreamToDisk() ? " · se guarda directo en tu disco" : mb > 400 ? " · archivo grande: si falla, baja fps o resolución" : ""}
+      </p>
+      {avcTooBig && <p className="text-[11px] text-amber-200/80">H.264 solo llega hasta ~4K; usa HEVC o elige 4K/HD.</p>}
+      {job && <JobProgress job={job} doneLabel="¡Video listo! Revisa tus descargas." />}
+      {!running && (
+        <Button variant="primary" className="w-full py-2.5" onClick={run} disabled={avcTooBig}>
           <Download size={16} /> Descargar MP4 {size.width}×{size.height}
         </Button>
       )}
-      {error && <p className="rounded-lg bg-red-500/10 p-3 text-xs text-red-200">{error}</p>}
     </div>
   );
 }
 
 function DynamicExport({ doc }: { doc: WallpaperDoc }) {
   const [supported, setSupported] = useState<boolean | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const job = useLatestJob("heic");
+  const running = job?.status === "running";
 
   useEffect(() => {
     canEncodeHeic(doc.width + (doc.width % 2), doc.height + (doc.height % 2)).then(setSupported);
   }, [doc.width, doc.height]);
 
-  const run = async () => {
-    setError(null);
-    setDone(false);
-    try {
-      const blob = await renderDynamicHeic(doc, setBusy);
-      downloadBlob(blob, `tapiz-dinamico-${doc.width}x${doc.height}.heic`);
-      setDone(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
+  const run = () => {
+    const snapshot = structuredClone(doc);
+    startJob("heic", `.heic ${doc.width}×${doc.height}`, async ({ progress, signal }) => ({
+      blob: await renderDynamicHeic(snapshot, { progress, signal }),
+      filename: `tapiz-dinamico-${doc.width}x${doc.height}.heic`,
+    }));
   };
 
   const mode = doc.dynamicMode === "time" ? "según la hora del día" : "según el modo claro/oscuro";
@@ -411,27 +441,19 @@ function DynamicExport({ doc }: { doc: WallpaperDoc }) {
       </p>
       {supported === false ? (
         <p className="mt-3 rounded-lg bg-amber-500/10 p-3 text-xs text-amber-200 ring-1 ring-amber-400/20">
-          Este navegador no puede codificar HEVC para este tamaño. Abre Tapiz en Chrome, Edge o Safari en una Mac.
+          Tu equipo no puede codificar HEVC a {doc.width}×{doc.height}. Prueba 4K o 5K, o abre Tapiz en Chrome o Safari en una Mac reciente.
         </p>
       ) : (
-        <Button variant="primary" className="mt-3 w-full py-2.5" onClick={run} disabled={!!busy || supported == null}>
-          {busy ? (
-            <>
-              <Loader2 size={16} className="animate-spin" /> {busy}
-            </>
-          ) : done ? (
-            <>
-              <Check size={16} /> ¡Listo! Descargar de nuevo
-            </>
-          ) : (
-            <>
+        <div className="mt-3 space-y-3">
+          {job && <JobProgress job={job} doneLabel="¡.heic listo! Revisa tus descargas." />}
+          {!running && (
+            <Button variant="primary" className="w-full py-2.5" onClick={run} disabled={supported == null}>
               <Download size={16} /> Descargar .heic dinámico
-            </>
+            </Button>
           )}
-        </Button>
+        </div>
       )}
-      {error && <p className="mt-2 rounded-lg bg-red-500/10 p-3 text-xs text-red-200">{error}</p>}
-      {done && (
+      {job?.status === "done" && (
         <ol className="mt-3 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-zinc-400">
           <li>Abre Ajustes del Sistema → Fondo de pantalla → “Añadir foto…” (o clic derecho en el archivo → “Establecer imagen de escritorio”).</li>
           <li>

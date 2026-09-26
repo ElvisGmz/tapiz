@@ -29,6 +29,7 @@ import { type Editor as EditorApi, makeShareUrl, useEditor } from "@/lib/store";
 import { recolor, reseed, surprise } from "@/lib/templates";
 import type { Layer } from "@/lib/types";
 import { ExportDialog, SavedDialog, TemplatesDialog } from "./Dialogs";
+import { JobsPanel } from "./JobsPanel";
 import { type HelpAction, HelpDialog, WELCOME_KEY } from "./HelpDialog";
 import { ScenesBar } from "./ScenesBar";
 import { SizeDialog } from "./SizeDialog";
@@ -273,6 +274,7 @@ export function Editor() {
       <TemplatesDialog open={dialog === "templates"} onClose={() => setDialog(null)} editor={editor} />
       {dialog === "export" && <ExportDialog open onClose={() => setDialog(null)} doc={doc} />}
       <SavedDialog open={dialog === "saved"} onClose={() => setDialog(null)} editor={editor} />
+      <JobsPanel onOpen={() => setDialog("export")} />
       {dialog === "help" && (
         <HelpDialog
           open

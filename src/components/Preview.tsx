@@ -5,6 +5,7 @@ import { assetsReady, preloadAssets } from "@/lib/render/assets";
 import { Pause, Play } from "lucide-react";
 import { loopOf, renderWallpaper } from "@/lib/render";
 import { docIsAnimated } from "@/lib/render/motion";
+import { useJobs } from "@/lib/jobs";
 import type { WallpaperDoc } from "@/lib/types";
 import { cx } from "./ui";
 
@@ -16,7 +17,7 @@ export interface Handle {
   label?: string;
 }
 
-const LOOPS = [4, 6, 8, 10, 15, 20, 30];
+const LOOPS = [4, 6, 8, 10, 12, 15, 20, 30];
 
 export function Preview({
   doc,
@@ -30,7 +31,10 @@ export function Preview({
   onLoopChange: (seconds: number) => void;
 }) {
   const animated = !!docIsAnimated(doc);
-  const [playing, setPlaying] = useState(true);
+  const [userPlaying, setPlaying] = useState(true);
+  // Exports use the same CPU/GPU: hold the preview still while one runs so the export goes faster.
+  const exporting = useJobs().some((j) => j.status === "running");
+  const playing = userPlaying && !exporting;
   const timeRef = useRef(0);
   const progressRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -163,9 +167,10 @@ export function Preview({
       {animated && (
         <div className="absolute left-3 top-3 z-20 flex items-center gap-2 rounded-full bg-black/50 py-1 pl-1 pr-3 text-[11px] text-zinc-300 ring-1 ring-white/10 backdrop-blur">
           <button
-            onClick={() => setPlaying(!playing)}
+            onClick={() => setPlaying(!userPlaying)}
+            disabled={exporting}
             className="grid h-6 w-6 place-items-center rounded-full bg-white text-zinc-900 transition hover:scale-105"
-            title={playing ? "Pausar" : "Reproducir"}
+            title={exporting ? "En pausa mientras se exporta" : playing ? "Pausar" : "Reproducir"}
           >
             {playing ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="ml-0.5" />}
           </button>
@@ -178,7 +183,8 @@ export function Preview({
             onChange={(e) => onLoopChange(Number(e.target.value))}
             className="cursor-pointer bg-transparent font-mono text-zinc-200 outline-none"
           >
-            {LOOPS.map((s) => (
+            {/* Templates or old designs may use a length that isn't in the list: always show the real one. */}
+            {[...new Set([...LOOPS, loopOf(doc)])].sort((a, b) => a - b).map((s) => (
               <option key={s} value={s} className="bg-zinc-900">
                 {s}s
               </option>
