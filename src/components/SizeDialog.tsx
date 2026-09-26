@@ -69,7 +69,7 @@ export function SizeDialog({
   return (
     <Modal open={open} onClose={onClose} title="Tamaño del lienzo" wide>
       <div className="flex flex-wrap items-center gap-3 border-b border-white/5 px-5 py-3">
-        <div className="w-80">
+        <div className="w-full sm:w-80">
           <Segmented
             value={tab}
             onChange={setTab}
@@ -84,7 +84,7 @@ export function SizeDialog({
           <Monitor size={14} /> Mi pantalla
         </Button>
         <div className="flex-1" />
-        <p className="font-mono text-xs text-zinc-500">
+        <p className="w-full font-mono text-xs text-zinc-500 sm:w-auto">
           Actual: {current?.label ?? "Personalizado"} · {width}×{height} · {ratioLabel(width, height)}
         </p>
       </div>
@@ -132,7 +132,7 @@ export function SizeDialog({
 
       {tab === "ratio" && (
         <div className="space-y-5 p-5">
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             {ASPECT_RATIOS.map((a) => {
               const active = a.label === ratio.label;
               const [w, h] = portrait ? [a.h, a.w] : [a.w, a.h];
@@ -155,7 +155,7 @@ export function SizeDialog({
             })}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="w-72">
+            <div className="w-full sm:w-72">
               <Segmented value={String(long)} onChange={(v) => setLong(Number(v))} options={LONG_SIDES.map((s) => ({ value: String(s.px), label: s.label }))} />
             </div>
             <Button variant="soft" onClick={() => setPortrait(!portrait)}>

@@ -120,8 +120,8 @@ export function TemplatesDialog({ open, onClose, editor }: { open: boolean; onCl
   return (
     <Modal open={open} onClose={onClose} title="Plantillas — todas 100% editables" wide>
       <div className="border-b border-white/5 px-5 py-3">
-        <div className="mb-3 flex items-center gap-3">
-          <div className="w-[28rem] shrink-0">
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[28rem] sm:shrink-0">
             <Segmented
               value={filter}
               onChange={setFilter}
@@ -133,7 +133,7 @@ export function TemplatesDialog({ open, onClose, editor }: { open: boolean; onCl
               ]}
             />
           </div>
-          <p className="text-[11px] text-zinc-500">Son un punto de partida: cambia textos, colores, fotos y capas a tu gusto.</p>
+          <p className="hidden text-[11px] text-zinc-500 sm:block">Son un punto de partida: cambia textos, colores, fotos y capas a tu gusto.</p>
         </div>
         <p className="mb-2 text-xs text-zinc-500">Colores de las plantillas</p>
         <div className="tz-scroll -m-1 flex gap-2 overflow-x-auto p-1 pb-2">
@@ -271,7 +271,7 @@ export function ExportDialog({ open, onClose, doc }: { open: boolean; onClose: (
 
         <div>
           <p className="mb-2 text-xs text-zinc-400">Pack multi-dispositivo — el diseño se adapta solo a cada pantalla</p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {RESOLUTIONS.filter((r) => !(r.width === doc.width && r.height === doc.height)).map((r) => {
               const on = extra.includes(r.id);
               return (
@@ -396,7 +396,7 @@ function AnimatedExport({ doc }: { doc: WallpaperDoc }) {
         <p className="text-[11px] text-amber-200/80">Ojo: tus fotos no viajan en el link en vivo; usa el video si tu diseño tiene fotos.</p>
       )}
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Segmented
           value={res}
           onChange={setRes}
@@ -617,7 +617,7 @@ function SavedBody({ onClose, editor }: { onClose: () => void; editor: Editor })
                   {d.doc.width}×{d.doc.height} · {new Date(d.savedAt).toLocaleDateString()}
                 </p>
               </div>
-              <button onClick={() => remove(d.id)} className="rounded p-1 text-zinc-500 opacity-0 hover:bg-white/10 hover:text-red-300 group-hover:opacity-100">
+              <button onClick={() => remove(d.id)} className="rounded p-1 text-zinc-500 opacity-0 hover:bg-white/10 hover:text-red-300 group-hover:opacity-100 pointer-coarse:opacity-100">
                 <Trash2 size={13} />
               </button>
             </div>

@@ -8,8 +8,17 @@ import type { Layer, LayerType, WallpaperDoc } from "./types";
 
 const STORAGE_KEY = "tapiz:doc:v1";
 
+/** First design: 4K for computers; on phones and tablets, the device's own screen so it fits right away. */
 export function initialDoc(): WallpaperDoc {
-  return { width: 3840, height: 2160, ...buildTemplate(TEMPLATES[0]) };
+  let width = 3840;
+  let height = 2160;
+  if (typeof window !== "undefined" && !matchMedia("(min-width: 1024px)").matches) {
+    const dpr = window.devicePixelRatio || 1;
+    const even = (n: number) => Math.min(4096, Math.round((n * dpr) / 2) * 2);
+    width = even(screen.width);
+    height = even(screen.height);
+  }
+  return { width, height, ...buildTemplate(TEMPLATES[0]) };
 }
 
 interface History {

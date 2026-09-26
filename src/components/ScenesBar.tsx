@@ -67,13 +67,13 @@ export function ScenesBar({ editor, onExport }: { editor: Editor; onExport: () =
 
   return (
     <div className="shrink-0 border-t border-white/5 bg-zinc-900/70 px-4 py-3">
-      <div className="mb-3 flex items-center gap-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="flex items-center gap-1.5 text-sm font-semibold">
           <Sun size={15} className="text-amber-300" />
           <Moon size={15} className="-ml-1 text-indigo-300" />
           Wallpaper dinámico
         </div>
-        <div className="w-72">
+        <div className="order-last w-full sm:order-none sm:w-72">
           <Segmented
             value={mode}
             onChange={(dynamicMode) => editor.setDoc((d) => ({ ...d, dynamicMode }))}
@@ -147,7 +147,7 @@ export function ScenesBar({ editor, onExport }: { editor: Editor; onExport: () =
                   e.stopPropagation();
                   editor.setDoc((d) => removeScene(d, i));
                 }}
-                className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 ring-1 ring-white/20 hover:text-white group-hover:flex"
+                className="absolute -right-1.5 -top-1.5 hidden h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-zinc-300 ring-1 ring-white/20 hover:text-white group-hover:flex pointer-coarse:flex"
               >
                 <X size={11} />
               </button>

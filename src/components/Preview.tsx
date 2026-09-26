@@ -49,7 +49,7 @@ export function Preview({
     const el = stageRef.current;
     if (!el) return;
     const fit = () => {
-      const pad = 48;
+      const pad = el.clientWidth < 640 ? 14 : 48;
       const aw = el.clientWidth - pad * 2;
       const ah = el.clientHeight - pad * 2;
       const r = doc.width / doc.height;
@@ -129,7 +129,7 @@ export function Preview({
   const single = handles.length === 1 ? handles[0] : null;
 
   return (
-    <div ref={stageRef} className="tz-stage relative flex h-full w-full items-center justify-center overflow-hidden">
+    <div ref={stageRef} className="tz-stage relative flex h-full w-full touch-none items-center justify-center overflow-hidden">
       <div
         className="tz-checker relative rounded-md shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/10"
         style={{ width: box.w, height: box.h }}
@@ -149,7 +149,7 @@ export function Preview({
             onPointerDown={(e) => startDrag(h.id, e)}
             className={cx(
               "group absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_4px_12px_rgba(0,0,0,0.5)] transition-[width,height]",
-              dragging === h.id ? "h-6 w-6 cursor-grabbing" : "h-4 w-4 hover:h-5 hover:w-5",
+              dragging === h.id ? "h-6 w-6 cursor-grabbing pointer-coarse:h-8 pointer-coarse:w-8" : "h-4 w-4 hover:h-5 hover:w-5 pointer-coarse:h-6 pointer-coarse:w-6",
             )}
             style={{ left: `${h.x * 100}%`, top: `${h.y * 100}%`, background: h.color ?? "rgba(139,92,246,0.9)" }}
           >
@@ -194,7 +194,7 @@ export function Preview({
       )}
       <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 font-mono text-[11px] text-zinc-400 backdrop-blur">
         {doc.width} × {doc.height}
-        {handles.length > 0 && <span className="ml-2 text-zinc-500">· arrastra para mover</span>}
+        {handles.length > 0 && <span className="ml-2 hidden text-zinc-500 sm:inline">· arrastra para mover</span>}
       </div>
     </div>
   );

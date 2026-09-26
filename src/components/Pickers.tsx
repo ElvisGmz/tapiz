@@ -48,7 +48,7 @@ export function EmojiPicker({ selected, onChange, initialCategory }: { selected:
         {selected.map((e) => (
           <button key={e} onClick={() => toggle(e)} title="Quitar" className="group relative rounded-lg bg-violet-500/20 p-1 text-xl ring-1 ring-violet-400/40">
             {e}
-            <span className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-[10px] text-zinc-300 ring-1 ring-white/20 group-hover:flex">×</span>
+            <span className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-[10px] text-zinc-300 ring-1 ring-white/20 group-hover:flex pointer-coarse:flex">×</span>
           </button>
         ))}
         {!selected.length && <p className="text-xs text-zinc-500">Elige uno o varios emojis abajo.</p>}

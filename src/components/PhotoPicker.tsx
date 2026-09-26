@@ -128,7 +128,7 @@ export function PhotoPicker({
                   onChange(selected.filter((x) => x !== p.id));
                   setLibrary(await listPhotos());
                 }}
-                className="absolute right-0.5 top-0.5 hidden rounded bg-black/70 p-1 text-zinc-300 hover:text-red-300 group-hover:block"
+                className="absolute right-0.5 top-0.5 hidden rounded bg-black/70 p-1 text-zinc-300 hover:text-red-300 group-hover:block pointer-coarse:block"
               >
                 <Trash2 size={11} />
               </button>

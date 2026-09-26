@@ -9,7 +9,7 @@ export function JobsPanel({ onOpen }: { onOpen: () => void }) {
   const jobs = useJobs().filter((j) => j.status !== "cancelled");
   if (!jobs.length) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-80 space-y-2">
+    <div className="fixed inset-x-3 bottom-[4.75rem] z-40 space-y-2 sm:inset-x-auto sm:right-4 sm:w-80 lg:bottom-4">
       {jobs.map((j) => (
         <div key={j.id} className="rounded-xl border border-white/10 bg-zinc-900/95 p-3 shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-2">

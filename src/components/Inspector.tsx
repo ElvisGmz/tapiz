@@ -123,7 +123,7 @@ function PaletteColors({ colors, onChange }: { colors: string[]; onChange: (c: s
             {colors.length > 1 && (
               <button
                 onClick={() => onChange(colors.filter((_, j) => j !== i))}
-                className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-zinc-300 ring-1 ring-white/20 group-hover:flex"
+                className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-zinc-300 ring-1 ring-white/20 group-hover:flex pointer-coarse:flex"
               >
                 <X size={10} />
               </button>

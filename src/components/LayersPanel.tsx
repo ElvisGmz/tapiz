@@ -88,7 +88,35 @@ const RECIPES: { label: string; emoji: string; make: () => Layer }[] = [
   { label: "Título grande", emoji: "🔤", make: () => text({ name: "Título", text: "TAPIZ", font: "bebas", weight: 400, size: 0.35, letterSpacing: 0.04 }) },
 ];
 
-export function LayersPanel({ editor, openMenuSignal = 0 }: { editor: Editor; openMenuSignal?: number }) {
+/** Layer types + quick recipes; used by the desktop popover and the phone "＋" sheet. */
+export function AddLayerMenu({ onAdd }: { onAdd: (l: Layer | LayerType) => void }) {
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-0.5">
+        {ADD_ITEMS.map((it) => (
+          <button key={it.label} onClick={() => onAdd(it.make())} className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/8">
+            <it.icon size={18} className={it.color} />
+            <span>
+              <span className="block text-sm text-zinc-100">{it.label}</span>
+              <span className="block text-[11px] text-zinc-500">{it.desc}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="px-2.5 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recetas rápidas</p>
+      <div className="grid grid-cols-2 gap-1">
+        {RECIPES.map((r) => (
+          <button key={r.label} onClick={() => onAdd(r.make())} className="flex items-center gap-2 rounded-lg bg-white/4 px-2 py-1.5 text-left text-xs text-zinc-300 transition hover:bg-white/10 hover:text-white">
+            <span className="text-base">{r.emoji}</span>
+            {r.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function LayersPanel({ editor, openMenuSignal = 0, compact = false }: { editor: Editor; openMenuSignal?: number; compact?: boolean }) {
   const { doc, selected } = editor;
   const [menu, setMenu] = useState(false);
   // Lets the help guide open this menu ("Añadir capa →").
@@ -108,35 +136,16 @@ export function LayersPanel({ editor, openMenuSignal = 0 }: { editor: Editor; op
 
   return (
     <div className="flex h-full flex-col">
-      <div className="relative flex items-center justify-between px-4 pb-2 pt-4">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Capas</h3>
+      <div className={cx("relative flex items-center justify-between px-4 pb-2", compact ? "pt-1" : "pt-4")}>
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{compact ? "" : "Capas"}</h3>
         <button
           onClick={() => setMenu(true)}
           className="flex items-center gap-1 rounded-lg bg-violet-500/15 px-2 py-1 text-xs font-medium text-violet-200 ring-1 ring-violet-400/30 transition hover:bg-violet-500/25"
         >
           <Plus size={14} /> Añadir
         </button>
-        <Popover open={menu} onClose={() => setMenu(false)} className="tz-scroll left-3 right-3 top-12 max-h-[78vh] overflow-y-auto">
-          <div className="grid grid-cols-1 gap-0.5">
-            {ADD_ITEMS.map((it) => (
-              <button key={it.label} onClick={() => add(it.make())} className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/8">
-                <it.icon size={18} className={it.color} />
-                <span>
-                  <span className="block text-sm text-zinc-100">{it.label}</span>
-                  <span className="block text-[11px] text-zinc-500">{it.desc}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="px-2.5 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Recetas rápidas</p>
-          <div className="grid grid-cols-2 gap-1">
-            {RECIPES.map((r) => (
-              <button key={r.label} onClick={() => add(r.make())} className="flex items-center gap-2 rounded-lg bg-white/4 px-2 py-1.5 text-left text-xs text-zinc-300 transition hover:bg-white/10 hover:text-white">
-                <span className="text-base">{r.emoji}</span>
-                {r.label}
-              </button>
-            ))}
-          </div>
+        <Popover open={menu} onClose={() => setMenu(false)} className={cx("tz-scroll left-3 right-3 top-12 overflow-y-auto", compact ? "max-h-[36dvh]" : "max-h-[78vh]")}>
+          <AddLayerMenu onAdd={add} />
         </Popover>
       </div>
 
@@ -176,10 +185,10 @@ export function LayersPanel({ editor, openMenuSignal = 0 }: { editor: Editor; op
                 !layer.visible && "opacity-50",
               )}
             >
-              <GripVertical size={12} className="shrink-0 cursor-grab text-zinc-600 opacity-0 group-hover:opacity-100" />
+              <GripVertical size={12} className="shrink-0 cursor-grab text-zinc-600 opacity-0 group-hover:opacity-100 pointer-coarse:hidden" />
               <meta.icon size={15} className={cx("shrink-0", meta.color)} />
               <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-200">{layer.name}</span>
-              <div className="flex items-center opacity-0 transition group-hover:opacity-100">
+              <div className="flex items-center opacity-0 transition group-hover:opacity-100 pointer-coarse:opacity-100">
                 <RowBtn title="Subir" onClick={() => editor.moveLayer(layer.id, index + 1)}>
                   <ArrowUp size={13} />
                 </RowBtn>

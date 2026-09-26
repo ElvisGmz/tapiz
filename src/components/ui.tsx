@@ -258,10 +258,10 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm sm:p-4"
       onPointerDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className={cx("flex max-h-[88vh] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl", wide ? "max-w-5xl" : "max-w-lg")}>
+      <div className={cx("flex max-h-[92dvh] w-full flex-col sm:max-h-[88vh] overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl", wide ? "max-w-5xl" : "max-w-lg")}>
         <div className="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
           <h2 className="text-sm font-semibold text-white">{title}</h2>
           <button onClick={onClose} className="rounded-md px-2 text-lg leading-none text-zinc-500 hover:bg-white/10 hover:text-white">

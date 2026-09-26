@@ -49,7 +49,7 @@ function features(p: Platform): Feature[] {
     icon: MousePointer2,
     color: "text-violet-300",
     title: "Arrastra en el lienzo",
-    text: "Mueve la capa seleccionada con el mouse. En un fondo mesh, arrastra cada punto de color; en radial/cónico, su centro.",
+    text: "Mueve la capa seleccionada con el mouse o el dedo. En un fondo mesh, arrastra cada punto de color; en radial/cónico, su centro.",
   },
   {
     icon: LayoutTemplate,
@@ -235,7 +235,7 @@ export function HelpDialog({ open, onClose, onAction, firstRun }: { open: boolea
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-white/5 px-5 py-3">
+        <div className="flex flex-col items-stretch gap-3 border-t border-white/5 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-1.5 text-[11px] text-zinc-500">
             <Palette size={12} /> Todo se genera en tu navegador. Vuelve a esta guía con el botón <b className="text-zinc-300">?</b> de arriba.
           </p>
